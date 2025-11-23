@@ -1,4 +1,4 @@
-﻿#include <iostream>
+#include <iostream>
 #include <string>
 #include <map>
 #include <fstream>
@@ -20,7 +20,7 @@ inline std::wstring wgreen(const std::wstring& text) { return L"\033[32m" + text
 inline std::wstring wblue(const std::wstring& text) { return L"\033[34m" + text + L"\033[0m"; }
 inline std::wstring wyellow(const std::wstring& text) { return L"\033[33m" + text + L"\033[0m"; }
 
-// 映射表
+// 默认映射关系
 map<wstring, wstring> Map = {
     {L"输出", L"print("},
     {L"输入", L"input("},
@@ -50,6 +50,118 @@ string wstring_to_string(const wstring& wstr) {
     return converter.to_bytes(wstr);
 }
 
+// 检查文件是否存在
+bool file_exists(const string& filename) {
+    ifstream file(filename);
+    return file.good();
+}
+
+// 从JSON文件加载映射关系
+bool load_mappings_from_json(const string& filename, map<wstring, wstring>& mappings) {
+    if (!file_exists(filename)) {
+        wcout << wyellow(L"配置文件 ") << string_to_wstring(filename) << wyellow(L" 不存在，使用默认映射关系") << endl;
+        return false;
+    }
+
+    ifstream file(filename);
+    if (!file.is_open()) {
+        wcerr << wred(L"错误：无法打开配置文件: ") << string_to_wstring(filename) << endl;
+        return false;
+    }
+
+    string content((istreambuf_iterator<char>(file)), istreambuf_iterator<char>());
+    file.close();
+
+    // 简单的JSON解析（处理基本键值对）
+    // 移除空格和换行
+    string cleaned_content;
+    for (char c : content) {
+        if (c != ' ' && c != '\n' && c != '\r' && c != '\t') {
+            cleaned_content += c;
+        }
+    }
+
+    content = cleaned_content;
+
+    // 检查是否是有效的JSON对象
+    if (content.empty() || content[0] != '{' || content[content.size() - 1] != '}') {
+        wcerr << wred(L"错误：无效的JSON格式，期望 {...}") << endl;
+        return false;
+    }
+
+    // 移除外层大括号
+    content = content.substr(1, content.size() - 2);
+
+    size_t pos = 0;
+    int count = 0;
+
+    while (pos < content.size()) {
+        // 查找键的开始引号
+        if (content[pos] != '"') {
+            wcerr << wred(L"错误：期望键的引号，找到: ") << content[pos] << endl;
+            break;
+        }
+
+        // 查找键的结束引号
+        size_t key_end = content.find('"', pos + 1);
+        if (key_end == string::npos) {
+            wcerr << wred(L"错误：键的引号不匹配") << endl;
+            break;
+        }
+
+        // 提取键
+        string key = content.substr(pos + 1, key_end - pos - 1);
+
+        // 查找冒号
+        pos = key_end + 1;
+        if (pos >= content.size() || content[pos] != ':') {
+            wcerr << wred(L"错误：期望冒号") << endl;
+            break;
+        }
+
+        // 查找值的开始引号
+        pos++;
+        if (pos >= content.size() || content[pos] != '"') {
+            wcerr << wred(L"错误：期望值的引号") << endl;
+            break;
+        }
+
+        // 查找值的结束引号
+        size_t value_end = content.find('"', pos + 1);
+        if (value_end == string::npos) {
+            wcerr << wred(L"错误：值的引号不匹配") << endl;
+            break;
+        }
+
+        // 提取值
+        string value = content.substr(pos + 1, value_end - pos - 1);
+
+        // 添加到映射
+        wstring wkey = string_to_wstring(key);
+        wstring wvalue = string_to_wstring(value);
+        mappings[wkey] = wvalue;
+        count++;
+
+        wcout << L"加载映射: " << wkey << L" -> " << wvalue << endl;
+
+        // 移动到下一个（逗号或结束）
+        pos = value_end + 1;
+        if (pos < content.size() && content[pos] == ',') {
+            pos++;
+        }
+    }
+
+    if (count > 0) {
+        wcout << wgreen(L"成功从 ") << string_to_wstring(filename) << wgreen(L" 加载 ")
+            << count << wgreen(L" 个映射关系") << endl;
+        return true;
+    }
+    else {
+        wcerr << wred(L"错误：未能从配置文件中加载任何映射关系") << endl;
+        return false;
+    }
+}
+
 // 计算括号是否匹配
 int count_parentheses(const wstring& text) {
     int balance = 0;
@@ -76,12 +188,12 @@ wstring process_output_statement(const wstring& line) {
         pos += 1;
     }
     pos = 0;
-    while ((pos = result.find(L"“", pos)) != wstring::npos) {
+    while ((pos = result.find(L"「", pos)) != wstring::npos) {
         result.replace(pos, 1, L"\"");
         pos += 1;
     }
     pos = 0;
-    while ((pos = result.find(L"”", pos)) != wstring::npos) {
+    while ((pos = result.find(L"」", pos)) != wstring::npos) {
         result.replace(pos, 1, L"\"");
         pos += 1;
     }
@@ -283,7 +395,7 @@ void replace_code(wstring& text, const map<wstring, wstring>& Map) {
     else if (text.find(L"循环") == 0 || text.find(L"循环w") == 0) {
         text = process_loop_statement(text);
     }
-    else if (text.find(L"如果") == 0 || text.find(L"否则") == 0) {
+    else if (text.find(L"如果") == 0 || text.find(L"否则如果") == 0 || text.find(L"否则") == 0) {
         text = process_condition_statement(text);
     }
     else if (text.find(L"定义") == 0) {
@@ -510,11 +622,6 @@ void display_file_content(const string& filename) {
     file.close();
 }
 
-bool file_exists(const string& filename) {
-    ifstream file(filename);
-    return file.good();
-}
-
 int main(int argc, char* argv[]) {
 #ifdef _WIN32
     system("chcp 65001 > nul");
@@ -522,6 +629,11 @@ int main(int argc, char* argv[]) {
     string input_filename = "code.code";
     wcout.imbue(locale("en_US.UTF-8"));
     wcout << wgreen(L"=== 中文代码编译器 ===") << endl;
+
+    // 首先尝试加载ctopy.json配置文件
+    wcout << wblue(L"正在检查配置文件 ctopy.json...") << endl;
+    load_mappings_from_json("ctopy.json", Map);
+
     string first_arg = "";
     if (argc > 1) {
         first_arg = argv[1];
@@ -531,10 +643,12 @@ int main(int argc, char* argv[]) {
         getline(cin, input_filename);
     }
     else input_filename = first_arg;
+
     if (!file_exists(input_filename)) {
         wcout << wred(L"错误：文件不存在: ") << string_to_wstring(input_filename) << endl;
         wcout << L"\n按Enter退出...";
         cin.get();
+        return 1;
     }
 
     wstring wtext = read_document(string_to_wstring(input_filename));
@@ -542,6 +656,7 @@ int main(int argc, char* argv[]) {
         wcerr << wred(L"错误：无法读取文件或文件为空") << endl;
         wcout << L"\n按Enter退出...";
         cin.get();
+        return 1;
     }
 
     wcout << wgreen(L"\n1. 原始代码:") << endl;
@@ -596,6 +711,12 @@ int main(int argc, char* argv[]) {
 
             wcout << L"=== 程序结束 ===" << endl;
         }
+    }
+    else {
+        wcerr << wred(L"错误：保存Python文件失败") << endl;
+        wcout << L"\n按Enter退出...";
+        cin.get();
+        return 1;
     }
 
     wcout << L"\n按Enter退出...";
