@@ -34,12 +34,19 @@ inline std::wstring wyellow(const std::wstring& text) {
 
 // 默认映射关系
 map<wstring, wstring> Map = {
+    {L"使用库",L"#include "},
+    {L"使用命名空间",L"using namespace "},
+    {L"主函数",L"int main"},
+    {L"函数",L"void"},
     {L"输出", L"cout << "},
     {L"输入", L"cin >> "},
     {L"整形", L"int "},
     {L"字符型", L"string "},
     {L"长整形", L"long long "},
     {L"浮点形", L"double "},
+	{L"布尔型", L"bool "},
+	{L"真", L"true"},
+	{L"假", L"false"},
     {L"如果", L"if "},
     {L"否则", L"else "},
     {L"否则如果", L"else if "},
@@ -462,10 +469,6 @@ wstring read_document(const wstring& filename) {
 
 string generate_cpp_program(const wstring& code) {
     stringstream full_program;
-    full_program << "#include <iostream>\n";
-    full_program << "#include <string>\n";
-    full_program << "using namespace std;\n\n";
-    full_program << "int main() {\n";
 
     wistringstream wstream(code);
     wstring line;
@@ -534,9 +537,6 @@ string generate_cpp_program(const wstring& code) {
             }
         }
     }
-
-    full_program << "    return 0;\n";
-    full_program << "}\n";
 
     // 最终清理：确保整个程序没有BOM和不可见字符
     string result = full_program.str();
@@ -607,7 +607,6 @@ void create_sample_code_file(const string& filename) {
         wcout << L"已创建示例文件: " << string_to_wstring(filename) << endl;
     }
 }
-
 // 删除文件
 bool delete_file(const string& filename) {
     if (remove(filename.c_str()) == 0) {
@@ -619,24 +618,19 @@ bool delete_file(const string& filename) {
         return false;
     }
 }
-
 int main(int argc, char* argv[]) {
     // 设置控制台为UTF-8编码
 #ifdef _WIN32
     system("chcp 65001 > nul");
 #endif
-
     wcout.imbue(locale("en_US.UTF-8"));
     wcout << wgreen(L"=== 中文代码编译器 ===") << endl;
-
     // 首先尝试加载ctoc.json配置文件
     wcout << wblue(L"正在检查配置文件 ctoc.json...") << endl;
     load_mappings_from_json("ctoc.json", Map);
-
     string input_filename;
     string output_exe_name;
     string cpp_filename;
-
     // 处理命令行参数
     if (argc > 1) {
         input_filename = argv[1];
@@ -655,23 +649,19 @@ int main(int argc, char* argv[]) {
             wcout << wyellow(L"使用默认文件名: ") << string_to_wstring(input_filename) << endl;
         }
     }
-
     // 检查输入文件是否存在，如果不存在则创建示例文件
     if (!file_exists(input_filename)) {
         wcout << L"文件 " << string_to_wstring(input_filename) << L" 不存在，创建示例文件..." << endl;
         create_sample_code_file(input_filename);
     }
-
     // 读取输入文件
     wstring wtext = read_document(string_to_wstring(input_filename));
     if (wtext.empty()) {
         wcerr << wred(L"错误：无法读取文件或文件为空: ") << string_to_wstring(input_filename) << endl;
         return 1;
     }
-
     wcout << wgreen(L"\n1. 原始代码 (") << string_to_wstring(input_filename) << wgreen(L"):") << endl;
     wcout << wtext << endl;
-
     // 保存原始行结构
     vector<wstring> original_lines;
     wistringstream wstream(wtext);
@@ -689,7 +679,6 @@ int main(int argc, char* argv[]) {
             }
         }
     }
-
     // 分别替换每一行并自动补全分号
     vector<wstring> converted_lines;
     for (size_t i = 0; i < original_lines.size(); i++) {
@@ -697,18 +686,15 @@ int main(int argc, char* argv[]) {
         replace_code(converted_line, Map);
         converted_lines.push_back(converted_line);
     }
-
     wcout << wgreen(L"\n2. 转换后代码（已自动补全分号）:") << endl;
     for (size_t i = 0; i < converted_lines.size(); i++) {
         wcout << L"   " << converted_lines[i] << endl;
     }
-
     // 重新组合转换后的行
     wstring converted_text;
     for (size_t i = 0; i < converted_lines.size(); i++) {
         converted_text += converted_lines[i] + L"\n";
     }
-
     // 生成临时cpp文件名（基于输入文件名）
     size_t dot_pos = input_filename.find_last_of('.');
     if (dot_pos != string::npos) {
@@ -717,20 +703,15 @@ int main(int argc, char* argv[]) {
     else {
         cpp_filename = input_filename + ".cpp";
     }
-
     string cpp_program = generate_cpp_program(converted_text);
-
     if (save_to_file(cpp_program, cpp_filename)) {
         wcout << wgreen(L"\n3. C++程序已保存到: ") << string_to_wstring(cpp_filename) << endl;
-
         // 显示文件内容
         display_file_content(cpp_filename);
-
         // 询问是否编译
         wcout << wblue(L"\n是否编译程序？(y/n): ");
         string compile_choice;
         getline(cin, compile_choice);
-
         if (compile_choice == "y" || compile_choice == "Y") {
             // 询问输出可执行文件名
             wcout << L"请输入输出可执行文件名（不含扩展名，回车使用默认名）: ";
@@ -749,7 +730,6 @@ int main(int argc, char* argv[]) {
             else {
                 output_exe_name = exe_input;
             }
-
             // 添加平台特定的扩展名
 #ifdef _WIN32
             string output_exe_file = output_exe_name + ".exe";
@@ -758,20 +738,15 @@ int main(int argc, char* argv[]) {
             string output_exe_file = output_exe_name;
             string compile_command = "g++ -o \"" + output_exe_name + "\" \"" + cpp_filename + "\" 2>&1";
 #endif
-
             wcout << wgreen(L"\n编译中...") << endl;
             wcout << L"编译命令: " << string_to_wstring(compile_command) << endl;
-
             int compile_result = system(compile_command.c_str());
-
             if (compile_result == 0) {
                 wcout << wgreen(L"编译成功！生成的可执行文件: ") << string_to_wstring(output_exe_file) << endl;
-
                 // 询问是否运行程序
                 wcout << L"\n是否运行程序？(y/n): ";
                 string run_choice;
                 getline(cin, run_choice);
-
                 if (run_choice == "y" || run_choice == "Y") {
                     wcout << L"\n=== 程序输出 ===" << endl;
 #ifdef _WIN32
@@ -780,9 +755,9 @@ int main(int argc, char* argv[]) {
                     string run_command = "./\"" + output_exe_name + "\"";
 #endif
                     system(run_command.c_str());
+					wcout << L"\n";
                     wcout << L"=== 程序结束 ===" << endl;
                 }
-
                 // 询问是否删除cpp文件
                 wcout << wred(L"\n是否删除临时CPP文件 ") << string_to_wstring(cpp_filename) << wred(L"？(y/n): ");
                 string delete_choice;
@@ -809,7 +784,6 @@ int main(int argc, char* argv[]) {
         wcerr << L"保存C++程序失败！" << endl;
         return 1;
     }
-
     wcout << L"\n按Enter键退出...";
     cin.get();
     return 0;
