@@ -22,21 +22,303 @@ inline std::wstring wyellow(const std::wstring& text) { return L"\033[33m" + tex
 
 // 默认映射关系
 map<wstring, wstring> Map = {
+    // 基本输入输出
     {L"输出", L"print("},
     {L"输入", L"input("},
+
+    // 控制流
     {L"如果", L"if "},
     {L"否则", L"else:"},
     {L"否则如果", L"elif "},
-    {L"循环w", L"while "},
     {L"循环", L"for "},
+    {L"循环w", L"while "},
+
+    // 函数相关
     {L"定义", L"def "},
     {L"返回", L"return "},
+
+    // 布尔值
     {L"是", L"True"},
     {L"否", L"False"},
     {L"且", L" and "},
     {L"或", L" or "},
+
+    // 数据类型
     {L"字符串", L"str"},
-    {L"长度", L"len"}
+    {L"长度", L"len"},
+
+    // 变量声明和赋值
+    {L"让", L""},  // 让 x = 5 → x = 5
+    {L"设", L""},  // 设 x = 5 → x = 5
+    {L"变量", L""}, // 变量 x = 5 → x = 5
+    {L"等于", L"="},
+    {L"为", L"="},  // x 为 5 → x = 5
+
+    // 删除语句
+    {L"删除", L"del "},
+    {L"移除变量", L"del "},
+
+    // 导入语句
+    {L"导入", L"import "},
+    {L"引入", L"import "},
+    {L"作为", L" as "},
+    {L"从", L"from "},
+
+    // 断言语句
+    {L"断言", L"assert "},
+    {L"确保", L"assert "},
+
+    // 全局变量
+    {L"全局", L"global "},
+    {L"全局变量", L"global "},
+
+    // 非局部变量
+    {L"非局部", L"nonlocal "},
+    {L"外部变量", L"nonlocal "},
+
+    // 异常处理
+    {L"尝试", L"try:"},
+    {L"捕获", L"except"},
+    {L"异常", L"except"},
+    {L"最后", L"finally:"},
+    {L"抛出", L"raise "},
+    {L"引发", L"raise "},
+
+    // 循环控制
+    {L"跳出", L"break"},
+    {L"终止循环", L"break"},
+    {L"继续", L"continue"},
+    {L"跳过本次", L"continue"},
+    {L"通过", L"pass"},
+    {L"空操作", L"pass"},
+
+    // with语句
+    {L"用", L"with "},
+    {L"使用", L"with "},
+
+    // 执行语句
+    {L"执行", L"exec("},
+    {L"评估", L"eval("},
+
+    // 打印到文件
+    {L"打印到", L"print("},
+    {L"输出到文件", L"print("},
+
+    // 文件操作
+    {L"打开文件", L"open("},
+    {L"关闭文件", L".close()"},
+    {L"读取文件", L".read()"},
+    {L"写入文件", L".write("},
+
+    // 类相关
+    {L"类", L"class "},
+    {L"继承", L"("},
+    {L"自", L"self"},
+    {L"自身", L"self"},
+    {L"初始化", L"__init__"},
+    {L"构造", L"__init__"},
+    {L"析构", L"__del__"},
+
+    // 特殊方法
+    {L"字符串化", L"__str__"},
+    {L"表示", L"__repr__"},
+    {L"调用", L"__call__"},
+    {L"获取属性", L"__getattr__"},
+    {L"设置属性", L"__setattr__"},
+
+    // 属性装饰器
+    {L"属性", L"@property"},
+    {L"静态方法", L"@staticmethod"},
+    {L"类方法", L"@classmethod"},
+
+    // 异步编程
+    {L"异步", L"async "},
+    {L"等待", L"await "},
+
+    // 生成器
+    {L"生成器", L"yield "},
+    {L"产出", L"yield "},
+
+    // 调试语句
+    {L"调试", L"breakpoint()"},
+    {L"设置断点", L"breakpoint()"},
+
+    // 退出语句
+    {L"退出", L"exit()"},
+    {L"退出程序", L"exit()"},
+    {L"终止", L"quit()"},
+
+    // 编译语句
+    {L"编译", L"compile("},
+
+    // 内存查看
+    {L"内存视图", L"memoryview("},
+    {L"内存大小", L"getsizeof("},
+
+    // 哈希和ID
+    {L"哈希值", L"hash("},
+    {L"标识", L"id("},
+
+    // 迭代器
+    {L"迭代", L"iter("},
+    {L"下一个", L"next("},
+
+    // 切片操作
+    {L"切片", L"slice("},
+
+    // 静态方法
+    {L"静态", L"staticmethod("},
+
+    // 类方法
+    {L"类方法", L"classmethod("},
+
+    // 超类
+    {L"超类", L"super("},
+    {L"父类", L"super("},
+
+    // 对象检查
+    {L"是实例", L"isinstance("},
+    {L"是子类", L"issubclass("},
+    {L"有属性", L"hasattr("},
+    {L"获取属性值", L"getattr("},
+    {L"设置属性值", L"setattr("},
+    {L"删除属性", L"delattr("},
+
+    // 变量检查
+    {L"局部变量", L"locals()"},
+    {L"全局变量表", L"globals()"},
+    {L"变量字典", L"vars("},
+
+    // 模块操作
+    {L"重载模块", L"reload("},
+    {L"模块属性", L"__import__("},
+
+    // 输入输出重定向
+    {L"输入重定向", L"input = "},
+    {L"输出重定向", L"print = "},
+
+    // 系统操作
+    {L"系统调用", L"system("},
+    {L"执行命令", L"popen("},
+
+    // 内存操作
+    {L"垃圾回收", L"gc.collect()"},
+    {L"引用计数", L"sys.getrefcount("},
+
+    // 序列化
+    {L"序列化", L"pickle.dumps("},
+    {L"反序列化", L"pickle.loads("},
+    {L"转储", L"pickle.dump("},
+    {L"加载", L"pickle.load("},
+
+    // JSON操作
+    {L"转JSON", L"json.dumps("},
+    {L"解析JSON", L"json.loads("},
+
+    // 时间操作
+    {L"当前时间", L"time.time()"},
+    {L"睡眠", L"time.sleep("},
+    {L"日期时间", L"datetime.now()"},
+
+    // 随机数
+    {L"随机数", L"random.random()"},
+    {L"随机整数", L"random.randint("},
+    {L"随机选择", L"random.choice("},
+
+    // 数学运算
+    {L"绝对值", L"abs("},
+    {L"四舍五入", L"round("},
+    {L"最大值", L"max("},
+    {L"最小值", L"min("},
+    {L"求和", L"sum("},
+    {L"幂运算", L"pow("},
+    {L"除数余数", L"divmod("},
+
+    // 类型转换
+    {L"转整数", L"int("},
+    {L"转浮点数", L"float("},
+    {L"转字符串", L"str("},
+    {L"转列表", L"list("},
+    {L"转元组", L"tuple("},
+    {L"转字典", L"dict("},
+    {L"转集合", L"set("},
+    {L"转布尔", L"bool("},
+    {L"转字节", L"bytes("},
+
+    // 进制转换
+    {L"二进制", L"bin("},
+    {L"八进制", L"oct("},
+    {L"十六进制", L"hex("},
+    {L"ASCII字符", L"chr("},
+    {L"ASCII码", L"ord("},
+
+    // 面向对象检查
+    {L"是类", L"isclass("},
+    {L"是函数", L"isfunction("},
+    {L"是方法", L"ismethod("},
+    {L"可调用", L"callable("},
+
+    // 文档字符串
+    {L"文档", L"__doc__"},
+    {L"帮助", L"help("},
+
+    // 版权信息
+    {L"版权", L"__copyright__"},
+    {L"作者", L"__author__"},
+    {L"版本", L"__version__"},
+
+    // 文件路径
+    {L"文件路径", L"__file__"},
+    {L"模块名", L"__name__"},
+
+    // 包相关
+    {L"包路径", L"__path__"},
+    {L"包名", L"__package__"},
+
+    // 注解相关
+    {L"注解", L"__annotations__"},
+
+    // 未来特性
+    {L"未来", L"__future__"},
+
+    // 警告控制
+    {L"忽略警告", L"warnings.filterwarnings('ignore')"},
+    {L"发出警告", L"warnings.warn("},
+
+    // 日志记录
+    {L"日志", L"logging.info("},
+    {L"调试日志", L"logging.debug("},
+    {L"警告日志", L"logging.warning("},
+    {L"错误日志", L"logging.error("},
+
+    // 测试相关
+    {L"测试", L"unittest.main()"},
+    {L"断言相等", L"assertEqual("},
+    {L"断言为真", L"assertTrue("},
+    {L"断言为假", L"assertFalse("},
+    {L"断言抛出", L"assertRaises("},
+
+    // 性能分析
+    {L"性能分析", L"cProfile.run("},
+    {L"时间分析", L"timeit.timeit("},
+
+    // 内存分析
+    {L"内存分析", L"tracemalloc.start()"},
+
+    // 并发编程
+    {L"线程", L"threading.Thread("},
+    {L"进程", L"multiprocessing.Process("},
+    {L"锁", L"threading.Lock()"},
+    {L"信号量", L"threading.Semaphore("},
+
+    // 网络编程
+    {L"套接字", L"socket.socket("},
+    {L"连接", L".connect("},
+    {L"绑定", L".bind("},
+    {L"监听", L".listen("},
+    {L"接受连接", L".accept("},
+    {L"发送数据", L".send("},
+    {L"接收数据", L".recv("}
 };
 
 // 转换函数
